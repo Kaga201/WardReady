@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WardReady – VR Clinical Training Prototype (Alpha)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="lib/aframe.min.js"></script>
+<style>
+:root{
+  --bg:#eef4f4; --card:#ffffff; --ink:#0d1f2d; --muted:#5b6b7a; --line:#e2eaec;
+  --primary:#0f766e; --primary-dk:#0b5852; --primary-lt:#e1f3f1;
+  --accent:#f59e0b; --ok:#15803d; --ok-lt:#dcf5e5; --bad:#dc2626; --bad-lt:#fdeaea;
+  --amber-lt:#fff4dc; --blue:#2563eb; --blue-lt:#e6eeff; --purple:#7c3aed; --purple-lt:#f0e9ff;
+  --radius:18px; --shadow:0 6px 22px rgba(13,40,52,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);
+  background:radial-gradient(1100px 600px at 15% 0%,#d3efeb 0%,transparent 60%),radial-gradient(900px 500px at 100% 100%,#dfe8fb 0%,transparent 55%),#e8efef;
+  display:flex;justify-content:center;align-items:center;min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit}
+.app{position:relative;width:100%;max-width:420px;height:100vh;background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+@media (min-width:520px){.app{height:min(880px,calc(100vh - 40px));border-radius:32px;box-shadow:0 30px 80px rgba(10,40,50,.25),0 0 0 10px #0d1f2d}}
+main{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 18px 96px}
+.view{display:none;animation:fade .25s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 10px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#0f766e,#2563eb);display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px;box-shadow:0 6px 14px rgba(15,118,110,.35)}
+.brand b{display:block;font-size:16px;letter-spacing:-.2px}
+.brand small{display:block;font-size:11px;color:var(--muted);font-weight:600}
+.iconbtn{width:38px;height:38px;border-radius:12px;background:var(--card);box-shadow:var(--shadow);display:grid;place-items:center;font-size:17px;position:relative}
+.iconbtn .dot{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--bad);border:2px solid #fff}
+.back{display:flex;align-items:center;gap:10px;padding:16px 0 10px}
+.back h2{font-size:18px;letter-spacing:-.3px}
+.back small{display:block;font-size:11.5px;color:var(--muted);font-weight:600}
+
+h3.sec{font-size:14px;margin:18px 2px 10px;display:flex;justify-content:space-between;align-items:center}
+h3.sec a{font-size:12px;color:var(--primary);font-weight:700;text-decoration:none;cursor:pointer}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+.card+.card{margin-top:10px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--primary-lt);color:var(--primary-dk);white-space:nowrap}
+.chip.amber{background:var(--amber-lt);color:#8a5a00}.chip.green{background:var(--ok-lt);color:#0b6b2e}
+.chip.red{background:var(--bad-lt);color:#a11d1d}.chip.blue{background:var(--blue-lt);color:#1e40af}
+.chip.purple{background:var(--purple-lt);color:#5b21b6}.chip.dark{background:#0d1f2d;color:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:14px;border-radius:14px;padding:13px 16px;transition:transform .08s ease,background .2s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--primary);color:#fff;box-shadow:0 8px 18px rgba(15,118,110,.3)}
+.btn.ghost{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.btn.soft{background:var(--primary-lt);color:var(--primary-dk)}
+.btn.danger{background:var(--bad);color:#fff;box-shadow:0 8px 18px rgba(220,38,38,.3)}
+.btn.block{width:100%}
+.row{display:flex;gap:10px;align-items:center}
+.grow{flex:1}
+
+/* home */
+.hero{border-radius:22px;padding:18px;color:#fff;background:linear-gradient(135deg,#0f766e 0%,#115e59 55%,#1e3a8a 100%);box-shadow:0 14px 30px rgba(15,118,110,.35);position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;right:-40px;top:-40px;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.08)}
+.hero .kick{font-size:11px;font-weight:700;opacity:.85;letter-spacing:.4px;text-transform:uppercase}
+.hero h1{font-size:21px;line-height:1.25;margin:6px 0 4px;letter-spacing:-.3px}
+.hero p{font-size:12.5px;opacity:.9}
+.hero .stats{display:flex;gap:8px;margin-top:14px}
+.hero .stat{flex:1;background:rgba(255,255,255,.13);border-radius:12px;padding:8px 10px}
+.hero .stat b{display:block;font-size:17px}
+.hero .stat span{font-size:10.5px;opacity:.85}
+.path{display:flex;flex-direction:column;gap:10px}
+.step{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:16px;padding:12px;box-shadow:var(--shadow);cursor:pointer;position:relative}
+.step .ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:22px;flex:none}
+.step b{font-size:14px;display:block}
+.step small{font-size:11.5px;color:var(--muted);display:block;margin-top:2px;line-height:1.35}
+.step .num{position:absolute;left:-6px;top:-6px;width:20px;height:20px;border-radius:50%;background:#0d1f2d;color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center;border:2px solid var(--bg)}
+.step .go{margin-left:auto;font-size:18px;color:var(--muted)}
+.step.done .num{background:var(--ok)}
+.ic.t{background:var(--primary-lt)}.ic.r{background:var(--bad-lt)}.ic.a{background:var(--amber-lt)}.ic.b{background:var(--blue-lt)}.ic.p{background:var(--purple-lt)}
+.alert{display:flex;gap:10px;align-items:center;padding:12px;border-radius:14px;background:var(--amber-lt);font-size:12px;color:#6b4500;margin-top:12px}
+.alert.red{background:var(--bad-lt);color:#8f1d1d}
+.alert.blue{background:var(--blue-lt);color:#1e3a8a}
+.alert.green{background:var(--ok-lt);color:#0b5a26}
+.alert b{display:block;font-size:12.5px}
+
+/* tab bar */
+.tabbar{position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;padding:8px 6px 14px;z-index:20}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--muted)}
+.tab .i{font-size:19px;line-height:1.1;filter:grayscale(1);opacity:.7}
+.tab.on{color:var(--primary)}
+.tab.on .i{filter:none;opacity:1}
+
+/* lists */
+.proc{display:flex;gap:12px;align-items:center}
+.proc .thumb{width:56px;height:56px;border-radius:14px;display:grid;place-items:center;font-size:26px;flex:none}
+.proc b{font-size:14px;display:block}
+.proc small{font-size:11.5px;color:var(--muted);line-height:1.35;display:block;margin-top:2px}
+.proc .meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.bar{height:7px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--primary)}
+.seg{display:flex;background:var(--card);border-radius:12px;padding:4px;box-shadow:var(--shadow);margin:6px 0 12px}
+.seg button{flex:1;padding:8px 6px;border-radius:9px;font-size:12px;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--primary);color:#fff}
+
+/* patient chart */
+.pt{display:flex;gap:12px;align-items:center}
+.avatar{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#fde68a,#f59e0b);display:grid;place-items:center;font-size:26px;flex:none}
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.vital{background:#f4f8f8;border-radius:12px;padding:9px 10px}
+.vital span{font-size:10.5px;color:var(--muted);font-weight:700;display:block}
+.vital b{font-size:17px;letter-spacing:-.3px}
+.vital b small{font-size:10.5px;color:var(--muted);font-weight:600}
+.vital.hi{background:var(--bad-lt)}.vital.hi b{color:var(--bad)}
+.vital.mid{background:var(--amber-lt)}.vital.mid b{color:#a16207}
+.vital.ok b{color:var(--ok)}
+.trend{height:70px;width:100%;margin-top:8px}
+.kv{display:flex;justify-content:space-between;font-size:12.5px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.kv:last-child{border-bottom:none}
+.kv span{color:var(--muted)}
+.ews{display:flex;align-items:center;gap:10px}
+.ews .score{width:54px;height:54px;border-radius:16px;background:var(--bad);color:#fff;display:grid;place-items:center;font-size:22px;font-weight:800;flex:none}
+
+/* sim (VR) view */
+.simwrap{position:absolute;inset:0;z-index:30;background:#000;display:none}
+.simwrap.on{display:block}
+.simwrap a-scene{position:absolute;inset:0;width:100%;height:100%}
+.simtop{position:absolute;top:0;left:0;right:0;padding:14px 14px 0;display:flex;gap:8px;align-items:center;z-index:5}
+.simtop .iconbtn{background:rgba(255,255,255,.92)}
+.pill{background:rgba(13,31,45,.78);color:#fff;font-size:11.5px;font-weight:700;padding:8px 11px;border-radius:999px;backdrop-filter:blur(6px);display:inline-flex;gap:6px;align-items:center}
+.pill.red{background:rgba(220,38,38,.9)}
+.pill.ok{background:rgba(21,128,61,.9)}
+.simtitle{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.simtitle b{display:block;font-size:14px}
+.simtitle small{font-size:11px;opacity:.9}
+.sheet{position:absolute;left:10px;right:10px;bottom:12px;background:rgba(255,255,255,.97);border-radius:20px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.35);z-index:5;max-height:58%;overflow-y:auto}
+.sheet h4{font-size:14px;margin-bottom:6px}
+.sheet .grip{width:40px;height:4px;border-radius:9px;background:#d5dde0;margin:-4px auto 10px}
+.hud{position:absolute;top:62px;left:12px;right:12px;display:flex;gap:6px;z-index:5;flex-wrap:wrap}
+.hud .hv{background:rgba(13,31,45,.8);color:#fff;border-radius:12px;padding:6px 9px;min-width:62px;backdrop-filter:blur(6px)}
+.hud .hv span{display:block;font-size:9.5px;opacity:.75;font-weight:700}
+.hud .hv b{font-size:15px}
+.hud .hv.hi b{color:#fca5a5}.hud .hv.ok b{color:#86efac}.hud .hv.mid b{color:#fde68a}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.act{background:#f2f7f7;border-radius:12px;padding:10px;text-align:left;font-size:12px;font-weight:700;display:flex;gap:8px;align-items:center;border:2px solid transparent}
+.act i{font-style:normal;font-size:17px}
+.act.done{background:var(--ok-lt);border-color:#86d9a5;color:#0b5a26}
+.act.wrong{background:var(--bad-lt);border-color:#f5a3a3;color:#8f1d1d}
+.feedback{font-size:12px;border-radius:12px;padding:9px 11px;margin-top:8px;background:var(--blue-lt);color:#1e3a8a;line-height:1.4}
+.feedback.ok{background:var(--ok-lt);color:#0b5a26}
+.feedback.bad{background:var(--bad-lt);color:#8f1d1d}
+.checklist{list-style:none;margin-top:4px}
+.checklist li{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.checklist li:last-child{border:none}
+.checklist .ck{width:20px;height:20px;border-radius:7px;border:2px solid #b8c7cc;flex:none;display:grid;place-items:center;font-size:11px;color:#fff;margin-top:1px}
+.checklist li.on .ck{background:var(--ok);border-color:var(--ok)}
+.checklist li.cur{font-weight:700}
+.checklist li.cur .ck{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-lt)}
+.reticle{position:absolute;left:50%;top:44%;width:22px;height:22px;margin:-11px 0 0 -11px;border:3px solid rgba(255,255,255,.9);border-radius:50%;z-index:4;pointer-events:none;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+
+/* CPR */
+.cprpad{width:100%;height:96px;border-radius:18px;background:linear-gradient(180deg,#ef4444,#b91c1c);color:#fff;font-weight:800;font-size:16px;display:grid;place-items:center;box-shadow:0 10px 22px rgba(185,28,28,.4);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.cprpad small{display:block;font-size:11px;font-weight:600;opacity:.85}
+.gauge{margin-top:10px}
+.gauge .lbl{display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;margin-bottom:5px}
+.gtrack{position:relative;height:12px;border-radius:99px;background:linear-gradient(90deg,#fde68a 0%,#fde68a 33%,#86efac 33%,#86efac 66%,#fca5a5 66%,#fca5a5 100%)}
+.gtrack .needle{position:absolute;top:-4px;width:4px;height:20px;border-radius:3px;background:#0d1f2d;transition:left .2s}
+.gtrack .mark{position:absolute;top:15px;font-size:9.5px;color:var(--muted);font-weight:700;transform:translateX(-50%)}
+.roles{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.role{font-size:11px;font-weight:700;padding:6px 9px;border-radius:10px;background:#f2f7f7}
+.role.on{background:#0d1f2d;color:#fff}
+
+/* triage */
+.tags{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.tagbtn{border-radius:12px;padding:10px 4px;font-size:11.5px;font-weight:800;color:#fff;text-align:center}
+.tagbtn small{display:block;font-size:9.5px;font-weight:600;opacity:.9}
+.tg-red{background:#dc2626}.tg-yellow{background:#eab308;color:#3b2a00}.tg-green{background:#16a34a}.tg-black{background:#1f2937}
+.cas{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-top:6px}
+.cas button{flex:none;width:38px;height:38px;border-radius:12px;background:#f2f7f7;font-weight:800;font-size:13px;border:2px solid transparent}
+.cas button.cur{border-color:var(--primary)}
+.cas button.red{background:#dc2626;color:#fff}.cas button.yellow{background:#eab308}.cas button.green{background:#16a34a;color:#fff}.cas button.black{background:#1f2937;color:#fff}
+.flow{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.flow .q{display:flex;align-items:center;gap:8px;font-size:12px;background:#f4f8f8;border-radius:12px;padding:8px 10px}
+.flow .q b{flex:1}
+.flow .q .t{font-size:10.5px;font-weight:800;padding:3px 7px;border-radius:7px;color:#fff}
+
+/* debrief */
+.ring{width:96px;height:96px;flex:none}
+.timeline{list-style:none;position:relative;margin-left:6px}
+.timeline li{position:relative;padding:0 0 12px 20px;font-size:12.5px;line-height:1.4}
+.timeline li:before{content:"";position:absolute;left:4px;top:5px;bottom:-5px;width:2px;background:var(--line)}
+.timeline li:last-child:before{display:none}
+.timeline li i{position:absolute;left:0;top:3px;width:10px;height:10px;border-radius:50%;background:var(--ok)}
+.timeline li.bad i{background:var(--bad)}.timeline li.mid i{background:var(--accent)}
+.timeline li small{display:block;color:var(--muted);font-size:11px}
+.skillrow{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:6px 0}
+.skillrow span{width:118px;flex:none;font-weight:600}
+.skillrow .bar{flex:1}
+.skillrow b{width:34px;text-align:right;font-size:12px}
+.heat{display:grid;grid-template-columns:86px repeat(5,1fr);gap:4px;font-size:10.5px;align-items:center}
+.heat .h{font-weight:800;color:var(--muted);text-align:center}
+.heat .n{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.heat .c{height:26px;border-radius:7px;display:grid;place-items:center;font-weight:800;color:#0d1f2d}
+.sign{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)}
+.sign:last-child{border:none}
+.sign .st{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:14px;flex:none}
+
+/* settings */
+.toggle{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.toggle:last-child{border:none}
+.toggle .tx{flex:1}
+.toggle .tx b{display:block;font-size:13.5px}
+.toggle .tx small{font-size:11.5px;color:var(--muted)}
+.sw{width:44px;height:26px;border-radius:99px;background:#cfd8dc;position:relative;flex:none;transition:background .2s}
+.sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s}
+.sw.on{background:var(--primary)}
+.sw.on:after{left:21px}
+.form label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin:10px 0 4px}
+.form textarea,.form input,.form select{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px;font-size:13px;background:#fbfdfd;resize:none}
+.sbar-l{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:#0d1f2d;color:#fff;font-size:11px;font-weight:800;margin-right:6px}
+.toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:#0d1f2d;color:#fff;font-size:12.5px;font-weight:600;padding:10px 14px;border-radius:12px;opacity:0;transition:all .25s;z-index:60;pointer-events:none;width:max-content;max-width:88%}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.qr{width:120px;height:120px;border-radius:14px;background:#fff;padding:8px;box-shadow:var(--shadow);flex:none}
+.code{font-size:26px;font-weight:800;letter-spacing:4px;color:var(--primary-dk)}
+
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<main id="main">
+
+<!-- ================= HOME ================= -->
+<section class="view" id="v-home">
+  <div class="topbar">
+    <div class="brand"><div class="logo">WR</div><div><b>WardReady</b><small>VR clinical training</small></div></div>
+    <div class="row"><button class="iconbtn" onclick="go('#me')" title="Headset & comfort">🥽</button><button class="iconbtn" onclick="toast('1 new task from your instructor: Code Blue drill due Friday')" title="Notifications">🔔<span class="dot"></span></button></div>
+  </div>
+  <div class="hero">
+    <div class="kick">Today’s virtual shift · Medical Ward 5B</div>
+    <h1>Good morning, <span id="h-name">Aina</span>. Ready for your shift?</h1>
+    <p>Five connected modules follow one patient journey, from preparing skills to the team debrief.</p>
+    <div class="stats">
+      <div class="stat"><b id="st-hours">6.5 h</b><span>VR practice</span></div>
+      <div class="stat"><b id="st-scen">14</b><span>scenarios</span></div>
+      <div class="stat"><b id="st-comp">9/15</b><span>competencies</span></div>
+    </div>
+  </div>
+  <div class="alert"><span style="font-size:20px">📋</span><div><b>Assigned by Sr. Noraini (Clinical Instructor)</b>Complete the full shift path before Friday’s skills assessment.</div></div>
+  <h3 class="sec">Shift path <a onclick="go('#debrief')">View debrief</a></h3>
+  <div class="path" id="path">
+    <div class="step" data-m="skills" onclick="go('#skills')"><span class="num">1</span><div class="ic t">🧤</div><div><b>Skills Lab</b><small>Practise the procedure step by step: hand hygiene and IV cannulation</small></div><span class="go">›</span></div>
+    <div class="step" data-m="ward" onclick="go('#ward')"><span class="num">2</span><div class="ic b">🛏️</div><div><b>Virtual Ward</b><small>Assess Encik Rahman at the bedside and escalate using SBAR</small></div><span class="go">›</span></div>
+    <div class="step" data-m="code" onclick="go('#code')"><span class="num">3</span><div class="ic r">❤️</div><div><b>Code Blue CPR</b><small>He collapses: lead high-quality CPR with live rate and depth feedback</small></div><span class="go">›</span></div>
+    <div class="step" data-m="triage" onclick="go('#triage')"><span class="num">4</span><div class="ic a">🚑</div><div><b>Triage Drill</b><small>Emergency department surge: tag 8 casualties in under 4 minutes</small></div><span class="go">›</span></div>
+    <div class="step" data-m="debrief" onclick="go('#debrief')"><span class="num">5</span><div class="ic p">📊</div><div><b>Debrief & Logbook</b><small>Scores, mistakes on a timeline, and instructor sign-off</small></div><span class="go">›</span></div>
+  </div>
+  <h3 class="sec">How you can join</h3>
+  <div class="card row small"><span style="font-size:26px">📱</span><div class="grow"><b>Phone, laptop or VR headset</b><div class="muted">Open the same link in a VR headset browser and tap “Enter VR”, or use the phone as a 360° window.</div></div></div>
+</section>
+
+<!-- ================= SKILLS LIST ================= -->
+<section class="view" id="v-skills">
+  <div class="back"><button class="iconbtn" onclick="go('#home')">‹</button><div><h2>Skills Lab</h2><small>Module 1 · procedural skills</small></div></div>
+  <div class="seg"><button class="on">Guided</button><button onclick="toast('Assessment mode hides the hints and records a pass/fail score')">Assessment</button><button onclick="toast('Free practice: no score is recorded')">Free</button></div>
+  <div class="card proc" onclick="openSim('skills')" style="cursor:pointer">
+    <div class="thumb" style="background:var(--primary-lt)">💉</div>
+    <div class="grow"><b>Peripheral IV cannulation</b><small>7 steps · infection control, patient ID, sharps safety</small>
+      <div class="meta"><span class="chip">VR</span><span class="chip amber">Required for Ward</span><span class="chip blue">~6 min</span></div></div>
+  </div>
+  <div class="card proc" onclick="openSim('skills')" style="cursor:pointer">
+    <div class="thumb" style="background:var(--blue-lt)">🧼</div>
+    <div class="grow"><b>Hand hygiene (7 steps)</b><small>Before patient contact and after body-fluid exposure</small>
+      <div class="meta"><span class="chip green">✓ Passed</span><span class="chip blue">~2 min</span></div></div>
+  </div>
+  <div class="card proc" onclick="toast('Locked: finish IV cannulation first')" style="opacity:.6">
+    <div class="thumb" style="background:var(--amber-lt)">🩸</div>
+    <div class="grow"><b>Blood culture collection</b><small>Unlocks after IV cannulation</small>
+      <div class="meta"><span class="chip dark">🔒 Locked</span></div></div>
+  </div>
+  <div class="card proc" onclick="toast('Locked: finish IV cannulation first')" style="opacity:.6">
+    <div class="thumb" style="background:var(--purple-lt)">🫁</div>
+    <div class="grow"><b>Oxygen therapy set-up</b><small>Nasal cannula vs face mask</small>
+      <div class="meta"><span class="chip dark">🔒 Locked</span></div></div>
+  </div>
+  <div class="alert blue"><span style="font-size:20px">💡</span><div><b>Why practise here first?</b>The same skills are used in the Virtual Ward, so mistakes here cost nothing and can be repeated.</div></div>
+</section>
+
+<!-- ================= WARD HANDOVER ================= -->
+<section class="view" id="v-ward">
+  <div class="back"><button class="iconbtn" onclick="go('#home')">‹</button><div><h2>Virtual Ward · Handover</h2><small>Module 2 · bed 12, Medical Ward 5B</small></div></div>
+  <div class="card">
+    <div class="pt"><div class="avatar">👴🏽</div><div class="grow"><b style="font-size:15px">Encik Rahman Ismail, 62</b><div class="small muted">Day 1 after bowel surgery · Allergy: penicillin</div><div class="row" style="margin-top:6px;gap:6px"><span class="chip red">Deteriorating</span><span class="chip">MRN 004512</span></div></div></div>
+    <div class="vgrid" id="handover-vitals"></div>
+    <svg class="trend" id="trend" viewBox="0 0 300 70" preserveAspectRatio="none"></svg>
+    <div class="small muted" style="display:flex;justify-content:space-between"><span>Heart rate, last 8 hours</span><span>now</span></div>
+  </div>
+  <div class="card">
+    <div class="ews"><div class="score" id="ews">10</div><div><b>Early warning score: HIGH</b><div class="small muted">Scored from breathing, oxygen, blood pressure, pulse and temperature. A high score means escalate now.</div></div></div>
+  </div>
+  <div class="card">
+    <b style="font-size:13.5px">Night nurse’s handover</b>
+    <div class="kv"><span>Situation</span><b>New fever, more drowsy since 5 am</b></div>
+    <div class="kv"><span>Urine output</span><b>20 ml/h for 3 hours</b></div>
+    <div class="kv"><span>IV line</span><b>Left forearm, 20G, day 1</b></div>
+    <div class="kv"><span>Doctor on call</span><b>Dr. Lim (ext. 4410)</b></div>
+  </div>
+  <button class="btn primary block" style="margin-top:14px" onclick="openSim('ward')">🥽 Go to the bedside in VR</button>
+</section>
+
+<!-- ================= SBAR ================= -->
+<section class="view" id="v-sbar">
+  <div class="back"><button class="iconbtn" onclick="openSim('ward')">‹</button><div><h2>Escalate with SBAR</h2><small>Call to Dr. Lim · voice or typed</small></div></div>
+  <div class="card form">
+    <div class="row"><span class="chip red">Time to escalate: <span id="sbar-time">02:41</span></span><span class="chip blue">🎙️ Voice ready</span></div>
+    <label><span class="sbar-l">S</span>Situation</label>
+    <textarea rows="2" id="sb-s">Encik Rahman, bed 12, is drowsy with a new fever and low blood pressure.</textarea>
+    <label><span class="sbar-l">B</span>Background</label>
+    <textarea rows="2" id="sb-b">62 years old, day 1 after bowel surgery, allergic to penicillin.</textarea>
+    <label><span class="sbar-l">A</span>Assessment</label>
+    <textarea rows="2" id="sb-a"></textarea>
+    <label><span class="sbar-l">R</span>Recommendation</label>
+    <textarea rows="2" id="sb-r">Please review him now. I suspect sepsis. Can I take blood cultures and start fluids?</textarea>
+    <div class="feedback" id="sbar-hint">Hint: the Assessment should include the latest vital signs and the warning score.</div>
+    <button class="btn primary block" style="margin-top:12px" onclick="sendSbar()">📞 Call Dr. Lim</button>
+  </div>
+</section>
+
+<!-- ================= CODE BRIEF ================= -->
+<section class="view" id="v-code">
+  <div class="back"><button class="iconbtn" onclick="go('#home')">‹</button><div><h2>Code Blue</h2><small>Module 3 · adult basic life support</small></div></div>
+  <div class="alert red" style="margin-top:0"><span style="font-size:22px">🚨</span><div><b>Bed 12 is unresponsive and not breathing normally</b>Call for help, start compressions, and get the defibrillator (AED).</div></div>
+  <div class="card">
+    <b style="font-size:13.5px">Targets for high-quality CPR</b>
+    <div class="kv"><span>Compression rate</span><b>100–120 per minute</b></div>
+    <div class="kv"><span>Compression depth</span><b>5–6 cm</b></div>
+    <div class="kv"><span>Ratio without airway</span><b>30 compressions : 2 breaths</b></div>
+    <div class="kv"><span>Pauses</span><b>Under 10 seconds</b></div>
+  </div>
+  <div class="card small">
+    <b style="font-size:13.5px">How to compress</b>
+    <div class="muted" style="margin-top:4px">With a headset: push down with both controllers on the virtual chest. On a phone: tap and hold the red pad in rhythm (a longer press = deeper compression), or place the phone on a pillow and push.</div>
+  </div>
+  <button class="btn danger block" style="margin-top:14px" onclick="openSim('code')">❤️ Start Code Blue in VR</button>
+</section>
+
+<!-- ================= TRIAGE BRIEF ================= -->
+<section class="view" id="v-triage">
+  <div class="back"><button class="iconbtn" onclick="go('#home')">‹</button><div><h2>Triage Drill</h2><small>Module 4 · mass casualty, START method</small></div></div>
+  <div class="card">
+    <div class="row"><span style="font-size:30px">🚌</span><div class="grow"><b>Express bus crash on the highway</b><div class="small muted">8 casualties arrive at the hospital entrance at once. You are the triage nurse.</div></div></div>
+    <div class="row" style="margin-top:10px;gap:6px"><span class="chip amber">⏱ 4 min target</span><span class="chip">30 s per patient</span><span class="chip blue">Team: 3 nurses</span></div>
+  </div>
+  <div class="card">
+    <b style="font-size:13.5px">START decision steps</b>
+    <div class="flow">
+      <div class="q"><b>1. Can the casualty walk?</b><span class="t tg-green">Yes → GREEN</span></div>
+      <div class="q"><b>2. Breathing after opening airway?</b><span class="t tg-black">No → BLACK</span></div>
+      <div class="q"><b>3. Breathing over 30 per minute?</b><span class="t tg-red">Yes → RED</span></div>
+      <div class="q"><b>4. Capillary refill over 2 seconds?</b><span class="t tg-red">Yes → RED</span></div>
+      <div class="q"><b>5. Cannot follow simple commands?</b><span class="t tg-red">Yes → RED</span></div>
+      <div class="q"><b>Otherwise</b><span class="t tg-yellow" style="color:#3b2a00">YELLOW</span></div>
+    </div>
+  </div>
+  <button class="btn primary block" style="margin-top:14px" onclick="openSim('triage')">🥽 Enter the scene</button>
+</section>
+
+<!-- ================= DEBRIEF ================= -->
+<section class="view" id="v-debrief">
+  <div class="back"><button class="iconbtn" onclick="go('#home')">‹</button><div><h2>Debrief</h2><small>Module 5 · today’s virtual shift</small></div></div>
+  <div class="card row" style="gap:14px">
+    <svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#e2eaec" stroke-width="11"/><circle id="ring-arc" cx="50" cy="50" r="42" fill="none" stroke="#0f766e" stroke-width="11" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="80" transform="rotate(-90 50 50)"/><text id="ring-txt" x="50" y="57" text-anchor="middle" font-size="22" font-weight="800" fill="#0d1f2d">70%</text></svg>
+    <div class="grow"><b style="font-size:15px">Overall shift score</b><div class="small muted" id="ring-note">Complete all four modules to unlock the instructor sign-off.</div><div class="row" style="margin-top:8px;gap:6px" id="ring-chips"></div></div>
+  </div>
+  <h3 class="sec">Score by module</h3>
+  <div class="card" id="mod-scores"></div>
+  <h3 class="sec">What happened, in order <a onclick="toast('Replay opens the VR scene at the selected moment')">▶ Replay</a></h3>
+  <div class="card"><ul class="timeline" id="timeline"></ul></div>
+  <h3 class="sec">Feedback</h3>
+  <div class="card small" id="fb-text"></div>
+  <button class="btn primary block" style="margin-top:14px" onclick="go('#logbook')">📒 Send to logbook for sign-off</button>
+</section>
+
+<!-- ================= LOGBOOK / INSTRUCTOR ================= -->
+<section class="view" id="v-logbook">
+  <div class="back"><button class="iconbtn" onclick="go('#debrief')">‹</button><div><h2>Logbook</h2><small>Competencies and instructor view</small></div></div>
+  <div class="seg" id="lb-seg"><button class="on" onclick="lbTab(0)">My logbook</button><button onclick="lbTab(1)">Instructor dashboard</button></div>
+  <div id="lb-me">
+    <div class="card">
+      <div class="row"><b class="grow" style="font-size:13.5px">Clinical competencies</b><span class="chip green">9 of 15 signed</span></div>
+      <div class="bar" style="margin-top:8px"><i style="width:60%"></i></div>
+      <div id="signs" style="margin-top:6px"></div>
+    </div>
+    <div class="card small"><b style="font-size:13.5px">Practice hours</b><div class="kv"><span>This week</span><b>2.0 h</b></div><div class="kv"><span>Total in VR</span><b>6.5 h</b></div><div class="kv"><span>Longest session</span><b>22 min (limit 30)</b></div></div>
+  </div>
+  <div id="lb-ins" style="display:none">
+    <div class="card">
+      <div class="row"><b class="grow" style="font-size:13.5px">Group DN2-B · average score</b><span class="chip blue">🟢 2 in VR now</span></div>
+      <div class="heat" style="margin-top:10px" id="heat"></div>
+    </div>
+    <div class="card small">
+      <b style="font-size:13.5px">Most common mistakes this week</b>
+      <div class="kv"><span>Waited before escalating a high warning score</span><b style="color:var(--bad)">58%</b></div>
+      <div class="kv"><span>Compression rate above 120 per minute</span><b style="color:var(--bad)">41%</b></div>
+      <div class="kv"><span>Under-triaged a head injury as YELLOW</span><b style="color:#a16207">27%</b></div>
+      <div class="kv"><span>Recapped the needle before disposal</span><b style="color:#a16207">12%</b></div>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn soft grow" onclick="toast('Scenario “Sepsis – night shift” assigned to DN2-B')">➕ Assign scenario</button><button class="btn primary grow" onclick="toast('Joined live session as observer (spectator view)')">👁 Watch live</button></div>
+  </div>
+</section>
+
+<!-- ================= ME / SETTINGS ================= -->
+<section class="view" id="v-me">
+  <div class="back"><button class="iconbtn" onclick="go('#home')">‹</button><div><h2>Headset & comfort</h2><small>Aina Sofea · Diploma in Nursing, Year 2</small></div></div>
+  <div class="card row" style="gap:14px">
+    <canvas class="qr" id="qr" width="120" height="120"></canvas>
+    <div class="grow"><b style="font-size:13.5px">Pair a VR headset</b><div class="small muted" style="margin:4px 0 6px">Open the link in the headset browser and enter this code. Progress syncs to your phone.</div><div class="code">WR-7316</div></div>
+  </div>
+  <div class="card">
+    <b style="font-size:13.5px">Comfort (reduces VR sickness)</b>
+    <div class="toggle"><div class="tx"><b>Seated mode</b><small>Play the whole shift sitting down</small></div><div class="sw on" onclick="sw(this)"></div></div>
+    <div class="toggle"><div class="tx"><b>Teleport movement</b><small>Jump between spots instead of smooth walking</small></div><div class="sw on" onclick="sw(this)"></div></div>
+    <div class="toggle"><div class="tx"><b>Comfort vignette</b><small>Darkens the edges of view while turning</small></div><div class="sw on" onclick="sw(this)"></div></div>
+    <div class="toggle"><div class="tx"><b>Break reminder</b><small>Every 20 minutes, hard stop at 30</small></div><div class="sw on" onclick="sw(this)"></div></div>
+  </div>
+  <div class="card">
+    <b style="font-size:13.5px">Accessibility</b>
+    <div class="toggle"><div class="tx"><b>Subtitles for patient speech</b><small>Shown under every voice line</small></div><div class="sw on" onclick="sw(this)"></div></div>
+    <div class="toggle"><div class="tx"><b>Larger text in VR</b><small>Panels and labels at 125%</small></div><div class="sw" onclick="sw(this)"></div></div>
+    <div class="toggle"><div class="tx"><b>Left-handed controls</b><small>Swap the main hand</small></div><div class="sw" onclick="sw(this)"></div></div>
+  </div>
+  <div class="alert green"><span style="font-size:20px">🔒</span><div><b>Your data</b>Scores are shared only with your clinical instructor. No real patient data is used.</div></div>
+  <button class="btn ghost block" style="margin-top:12px" onclick="resetAll()">↺ Reset demo progress</button>
+</section>
+
+</main>
+
+<!-- tab bar -->
+<nav class="tabbar" id="tabbar">
+  <button class="tab" data-t="home" onclick="go('#home')"><span class="i">🏠</span>Shift</button>
+  <button class="tab" data-t="skills" onclick="go('#skills')"><span class="i">🧤</span>Practise</button>
+  <button class="tab" data-t="debrief" onclick="go('#debrief')"><span class="i">📊</span>Debrief</button>
+  <button class="tab" data-t="logbook" onclick="go('#logbook')"><span class="i">📒</span>Logbook</button>
+  <button class="tab" data-t="me" onclick="go('#me')"><span class="i">🥽</span>Headset</button>
+</nav>
+
+<!-- ================= VR SIMULATION LAYER ================= -->
+<div class="simwrap" id="sim">
+  <a-scene embedded vr-mode-ui="enabled: true" renderer="antialias: true; colorManagement: true" background="color: #dfe9ec" loading-screen="enabled: false" device-orientation-permission-ui="enabled: false" cursor="rayOrigin: mouse" raycaster="objects: .hot">
+    <a-assets><canvas id="monCanvas" width="512" height="352"></canvas><canvas id="posterCanvas" width="512" height="640"></canvas></a-assets>
+    <a-entity light="type: ambient; intensity: 0.75"></a-entity>
+    <a-entity light="type: directional; intensity: 0.75" position="2 6 4"></a-entity>
+    <a-entity id="rig"><a-entity id="cam" camera look-controls="magicWindowTrackingEnabled: false; reverseMouseDrag: false" wasd-controls="enabled: false" position="0 1.6 0"></a-entity>
+      <a-entity laser-controls="hand: right" raycaster="objects: .hot"></a-entity></a-entity>
+
+    <!-- WARD (also Code Blue) -->
+    <a-entity id="g-ward">
+      <a-plane rotation="-90 0 0" width="9" height="9" color="#c9d4d2"></a-plane>
+      <a-plane position="0 1.5 -4" width="9" height="3" color="#e6efee"></a-plane>
+      <a-plane position="-4.5 1.5 0" rotation="0 90 0" width="9" height="3" color="#dfe9e8"></a-plane>
+      <a-plane position="4.5 1.5 0" rotation="0 -90 0" width="9" height="3" color="#dfe9e8"></a-plane>
+      <a-plane position="0 3 0" rotation="90 0 0" width="9" height="9" color="#f4f7f7"></a-plane>
+      <a-plane position="0 0.08 -3.99" width="9" height="0.16" color="#7b9aa3"></a-plane>
+      <a-plane position="-4.48 1.7 -1.6" rotation="0 90 0" width="1.8" height="1.1" color="#a9d6ee"></a-plane>
+      <a-box position="0 2.96 -2.2" width="1.2" height="0.04" depth="0.4" color="#ffffff" material="emissive: #ffffff; emissiveIntensity: 0.6"></a-box>
+      <!-- curtain -->
+      <a-plane position="-1.7 1.4 -2.4" rotation="0 90 0" width="2.6" height="2.3" color="#9ed8cf" side="double"></a-plane>
+      <!-- bed -->
+      <a-box position="0 0.45 -2.3" width="1.05" height="0.14" depth="2.05" color="#93a4ab"></a-box>
+      <a-box position="0 0.58 -2.3" width="0.98" height="0.14" depth="1.98" color="#ffffff"></a-box>
+      <a-box position="0 0.86 -3.33" width="1.08" height="0.66" depth="0.06" color="#5f8796"></a-box>
+      <a-box position="0 0.7 -1.28" width="1.08" height="0.36" depth="0.05" color="#5f8796"></a-box>
+      <a-cylinder position="-0.45 0.2 -3.2" radius="0.03" height="0.4" color="#6b7b82"></a-cylinder>
+      <a-cylinder position="0.45 0.2 -3.2" radius="0.03" height="0.4" color="#6b7b82"></a-cylinder>
+      <a-cylinder position="-0.45 0.2 -1.4" radius="0.03" height="0.4" color="#6b7b82"></a-cylinder>
+      <a-cylinder position="0.45 0.2 -1.4" radius="0.03" height="0.4" color="#6b7b82"></a-cylinder>
+      <a-box id="pillow" position="0 0.72 -3.02" width="0.62" height="0.12" depth="0.36" color="#f8fafc"></a-box>
+      <!-- patient -->
+      <a-entity id="patient">
+        <a-sphere position="0 0.85 -2.98" radius="0.13" color="#b98157"></a-sphere>
+        <a-sphere position="0 0.93 -3.0" radius="0.115" color="#2b2b2b" theta-length="80"></a-sphere>
+        <a-box position="0 0.74 -2.25" width="0.78" height="0.18" depth="1.4" color="#7db7d6"></a-box>
+        <a-box position="0 0.75 -2.72" width="0.6" height="0.16" depth="0.32" color="#cfe3ee"></a-box>
+        <a-cylinder position="-0.32 0.77 -2.55" rotation="90 0 0" radius="0.055" height="0.55" color="#b98157"></a-cylinder>
+        <a-box position="-0.32 0.79 -2.33" width="0.08" height="0.03" depth="0.05" color="#ffffff"></a-box>
+      </a-entity>
+      <!-- monitor -->
+      <a-cylinder position="0.95 0.95 -3.3" radius="0.025" height="1.9" color="#8a989e"></a-cylinder>
+      <a-box position="0.95 1.72 -3.25" width="0.62" height="0.44" depth="0.06" color="#1c2529"></a-box>
+      <a-plane id="monitor" position="0.95 1.72 -3.215" width="0.57" height="0.39" material="shader: flat; src: #monCanvas"></a-plane>
+      <!-- IV pole -->
+      <a-cylinder position="-0.78 1.05 -2.95" radius="0.02" height="2.1" color="#a5b2b7"></a-cylinder>
+      <a-box position="-0.78 1.9 -2.95" width="0.15" height="0.24" depth="0.05" color="#cfe6ff" material="opacity: 0.85"></a-box>
+      <a-cylinder position="-0.55 1.3 -2.75" rotation="20 0 35" radius="0.006" height="1.1" color="#e2e8f0"></a-cylinder>
+      <!-- oxygen outlet -->
+      <a-box position="-0.9 1.35 -3.97" width="0.3" height="0.16" depth="0.05" color="#e5e7eb"></a-box>
+      <a-cylinder position="-0.9 1.35 -3.92" rotation="90 0 0" radius="0.04" height="0.06" color="#16a34a"></a-cylinder>
+      <!-- bedside locker & chair -->
+      <a-box position="1.05 0.4 -2.2" width="0.45" height="0.8" depth="0.45" color="#d6c7a8"></a-box>
+      <a-box position="1.05 0.86 -2.2" width="0.08" height="0.12" depth="0.08" color="#93c5fd"></a-box>
+      <a-box position="1.9 0.45 -1.2" width="0.5" height="0.08" depth="0.5" color="#0f766e"></a-box>
+      <a-box position="1.9 0.75 -1.43" width="0.5" height="0.55" depth="0.06" color="#0f766e"></a-box>
+      <!-- Code Blue extras -->
+      <a-entity id="g-code" visible="false">
+        <a-box position="1.35 0.5 -1.55" width="0.6" height="1.0" depth="0.5" color="#c62828"></a-box>
+        <a-box position="1.35 1.08 -1.55" width="0.34" height="0.16" depth="0.26" color="#facc15"></a-box>
+        <a-box position="1.35 1.08 -1.41" width="0.12" height="0.06" depth="0.01" color="#16a34a"></a-box>
+        <a-entity position="-1.0 0 -2.0"><a-cylinder position="0 0.75 0" radius="0.2" height="1.0" color="#2563eb"></a-cylinder><a-sphere position="0 1.42 0" radius="0.15" color="#c58c5c"></a-sphere></a-entity>
+        <a-entity position="1.0 0 -2.9"><a-cylinder position="0 0.75 0" radius="0.2" height="1.0" color="#16a34a"></a-cylinder><a-sphere position="0 1.42 0" radius="0.15" color="#e0b48a"></a-sphere></a-entity>
+        <a-entity position="-0.85 0 -3.5"><a-cylinder position="0 0.75 0" radius="0.2" height="1.0" color="#7c3aed"></a-cylinder><a-sphere position="0 1.42 0" radius="0.15" color="#8d5a3b"></a-sphere></a-entity>
+        <a-plane id="cpr-hands" position="0 0.84 -2.5" rotation="-90 0 0" width="0.22" height="0.22" color="#ef4444" material="opacity: 0.85"></a-plane>
+      </a-entity>
+      <!-- hotspots ward -->
+      <a-entity id="hs-ward">
+        <a-ring class="hot" data-hs="patient" position="0 1.05 -2.55" radius-inner="0.07" radius-outer="0.1" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+        <a-ring class="hot" data-hs="monitor" position="0.95 2.03 -3.2" radius-inner="0.07" radius-outer="0.1" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+        <a-ring class="hot" data-hs="iv" position="-0.78 2.15 -2.9" radius-inner="0.07" radius-outer="0.1" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+        <a-ring class="hot" data-hs="oxygen" position="-0.9 1.6 -3.9" radius-inner="0.07" radius-outer="0.1" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+      </a-entity>
+    </a-entity>
+
+    <!-- SKILLS LAB -->
+    <a-entity id="g-skills" position="20 0 0" visible="false">
+      <a-plane rotation="-90 0 0" width="8" height="8" color="#d9e2e6"></a-plane>
+      <a-plane position="0 1.5 -3" width="8" height="3" color="#eef3f6"></a-plane>
+      <a-plane position="-3.5 1.5 0" rotation="0 90 0" width="8" height="3" color="#e3ebef"></a-plane>
+      <a-plane position="3.5 1.5 0" rotation="0 -90 0" width="8" height="3" color="#e3ebef"></a-plane>
+      <a-plane position="0 3 0" rotation="90 0 0" width="8" height="8" color="#f7f9fa"></a-plane>
+      <!-- sink -->
+      <a-box position="-0.9 0.45 -2.6" width="1.3" height="0.9" depth="0.6" color="#ffffff"></a-box>
+      <a-box position="-0.9 0.88 -2.6" width="0.7" height="0.06" depth="0.4" color="#cbd5e1"></a-box>
+      <a-cylinder position="-0.9 1.05 -2.78" radius="0.02" height="0.3" color="#94a3b8"></a-cylinder>
+      <a-cylinder position="-0.9 1.18 -2.7" rotation="90 0 0" radius="0.018" height="0.16" color="#94a3b8"></a-cylinder>
+      <a-box position="-0.45 1.25 -2.95" width="0.12" height="0.22" depth="0.1" color="#38bdf8"></a-box>
+      <a-plane position="-0.9 1.7 -2.98" width="0.8" height="0.6" color="#c7dbe6"></a-plane>
+      <a-plane id="poster" position="-2.1 1.6 -2.98" width="0.8" height="1.0" material="shader: flat; src: #posterCanvas"></a-plane>
+      <!-- procedure table -->
+      <a-box position="0.9 0.72 -2.2" width="1.4" height="0.06" depth="0.8" color="#e2e8f0"></a-box>
+      <a-cylinder position="0.3 0.35 -1.9" radius="0.025" height="0.7" color="#94a3b8"></a-cylinder>
+      <a-cylinder position="1.5 0.35 -1.9" radius="0.025" height="0.7" color="#94a3b8"></a-cylinder>
+      <a-cylinder position="0.3 0.35 -2.5" radius="0.025" height="0.7" color="#94a3b8"></a-cylinder>
+      <a-cylinder position="1.5 0.35 -2.5" radius="0.025" height="0.7" color="#94a3b8"></a-cylinder>
+      <a-cylinder position="0.75 0.8 -2.15" rotation="0 0 90" radius="0.06" height="0.7" color="#c08a63"></a-cylinder>
+      <a-sphere position="0.36 0.8 -2.15" radius="0.08" color="#c08a63"></a-sphere>
+      <a-torus position="0.95 0.8 -2.15" rotation="0 90 0" radius="0.065" radius-tubular="0.012" color="#2563eb"></a-torus>
+      <a-box position="0.62 0.81 -2.15" width="0.05" height="0.02" depth="0.13" color="#ffffff"></a-box>
+      <a-box position="1.35 0.77 -2.35" width="0.36" height="0.03" depth="0.26" color="#94a3b8"></a-box>
+      <a-cylinder position="1.3 0.8 -2.35" rotation="0 0 90" radius="0.008" height="0.12" color="#f472b6"></a-cylinder>
+      <a-box position="1.42 0.8 -2.32" width="0.06" height="0.02" depth="0.04" color="#ffffff"></a-box>
+      <a-box position="1.35 0.82 -1.95" width="0.26" height="0.1" depth="0.14" color="#3b82f6"></a-box>
+      <a-box position="1.85 0.92 -2.2" width="0.22" height="0.34" depth="0.22" color="#facc15"></a-box>
+      <a-box position="1.85 1.1 -2.2" width="0.22" height="0.04" depth="0.22" color="#dc2626"></a-box>
+      <a-entity id="hs-skills">
+        <a-ring class="hot" data-hs="sink" position="-0.9 1.25 -2.55" radius-inner="0.06" radius-outer="0.09" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+        <a-ring class="hot" data-hs="band" position="0.62 0.98 -2.12" radius-inner="0.05" radius-outer="0.075" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+        <a-ring class="hot" data-hs="gloves" position="1.35 1.0 -1.93" radius-inner="0.05" radius-outer="0.075" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+        <a-ring class="hot" data-hs="tourniquet" position="0.95 0.98 -2.12" radius-inner="0.05" radius-outer="0.075" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+        <a-ring class="hot" data-hs="swab" position="1.48 0.95 -2.3" radius-inner="0.05" radius-outer="0.075" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+        <a-ring class="hot" data-hs="cannula" position="1.22 0.95 -2.36" radius-inner="0.05" radius-outer="0.075" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+        <a-ring class="hot" data-hs="sharps" position="1.85 1.3 -2.15" radius-inner="0.05" radius-outer="0.075" color="#14b8a6" animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; loop: true; dur: 700"></a-ring>
+      </a-entity>
+    </a-entity>
+
+    <!-- TRIAGE SCENE -->
+    <a-entity id="g-triage" position="-40 0 0" visible="false">
+      <a-plane rotation="-90 0 0" width="40" height="40" color="#8fbf73"></a-plane>
+      <a-plane rotation="-90 0 0" position="0 0.01 -6" width="7" height="40" color="#5b6468"></a-plane>
+      <a-plane rotation="-90 0 0" position="0 0.02 -3" width="0.15" height="1.6" color="#f8fafc"></a-plane>
+      <a-plane rotation="-90 0 0" position="0 0.02 -7" width="0.15" height="1.6" color="#f8fafc"></a-plane>
+      <a-plane rotation="-90 0 0" position="0 0.02 -11" width="0.15" height="1.6" color="#f8fafc"></a-plane>
+      <a-entity position="3.6 0 -12" rotation="0 -28 0">
+        <a-box position="0 1.55 0" width="2.6" height="2.9" depth="10" color="#f5f5f4"></a-box>
+        <a-box position="0 1.0 0" width="2.62" height="0.35" depth="10.02" color="#0f766e"></a-box>
+        <a-box position="0 2.25 0" width="2.63" height="0.7" depth="9.4" color="#1f2937" material="opacity: 0.85"></a-box>
+        <a-cylinder position="1.3 0.45 3.2" rotation="0 0 90" radius="0.45" height="0.3" color="#111827"></a-cylinder>
+        <a-cylinder position="-1.3 0.45 3.2" rotation="0 0 90" radius="0.45" height="0.3" color="#111827"></a-cylinder>
+        <a-cylinder position="1.3 0.45 -3.2" rotation="0 0 90" radius="0.45" height="0.3" color="#111827"></a-cylinder>
+      </a-entity>
+      <a-entity position="-3.8 0 -7.5" rotation="0 15 0">
+        <a-box position="0 1.2 0" width="2.1" height="2.2" depth="4.6" color="#ffffff"></a-box>
+        <a-box position="0 1.2 0" width="2.12" height="0.3" depth="4.62" color="#dc2626"></a-box>
+        <a-box position="0 2.35 1.2" width="0.8" height="0.12" depth="0.3" color="#2563eb" material="emissive: #2563eb; emissiveIntensity: 0.8"></a-box>
+      </a-entity>
+      <a-cone position="-1.6 0.25 -3" radius-bottom="0.18" radius-top="0.02" height="0.5" color="#f97316"></a-cone>
+      <a-cone position="1.4 0.25 -4.2" radius-bottom="0.18" radius-top="0.02" height="0.5" color="#f97316"></a-cone>
+      <a-cone position="-0.4 0.25 -9.5" radius-bottom="0.18" radius-top="0.02" height="0.5" color="#f97316"></a-cone>
+      <a-entity id="casualties"></a-entity>
+    </a-entity>
+  </a-scene>
+
+  <div class="simtop">
+    <button class="iconbtn" onclick="closeSim()">✕</button>
+    <div class="simtitle grow"><b id="sim-title">Virtual Ward</b><small id="sim-sub">Drag to look around · tap the glowing rings</small></div>
+    <span class="pill" id="sim-timer">⏱ 00:00</span>
+  </div>
+  <div class="reticle" id="reticle"></div>
+  <div class="hud" id="hud"></div>
+
+  <!-- overlays per module -->
+  <div class="sheet" id="ov-skills" style="display:none">
+    <div class="grip"></div>
+    <div class="row"><h4 class="grow">IV cannulation · guided</h4><span class="chip" id="sk-count">0 / 7</span></div>
+    <ul class="checklist" id="sk-list"></ul>
+    <div class="feedback" id="sk-fb">Tap the glowing ring for the next step, or tap a step to check the hint.</div>
+  </div>
+
+  <div class="sheet" id="ov-ward" style="display:none">
+    <div class="grip"></div>
+    <div class="row"><h4 class="grow">What will you do?</h4><span class="chip red" id="wd-ews">Warning score 10</span></div>
+    <div class="actions" id="wd-acts"></div>
+    <div class="feedback" id="wd-fb">Encik Rahman: “Nurse… I feel cold and very tired.”</div>
+    <button class="btn primary block" style="margin-top:10px" onclick="go('#sbar')">📞 Escalate with SBAR</button>
+  </div>
+
+  <div class="sheet" id="ov-code" style="display:none">
+    <div class="grip"></div>
+    <div class="row"><h4 class="grow">Chest compressions</h4><span class="chip dark" id="cp-cycle">Cycle 1 · 0/30</span></div>
+    <div class="cprpad" id="cprpad">PUSH<small>tap and hold in rhythm</small></div>
+    <div class="gauge"><div class="lbl"><span>Rate</span><span id="cp-rate">— /min</span></div><div class="gtrack" id="g-rate"><span class="needle" style="left:0%"></span><span class="mark" style="left:33%">100</span><span class="mark" style="left:66%">120</span></div></div>
+    <div class="gauge" style="margin-top:20px"><div class="lbl"><span>Depth</span><span id="cp-depth">— cm</span></div><div class="gtrack" id="g-depth"><span class="needle" style="left:0%"></span><span class="mark" style="left:33%">5</span><span class="mark" style="left:66%">6</span></div></div>
+    <div style="margin-top:22px" class="small"><b>Team roles</b> <span class="muted">(tap to assign)</span></div>
+    <div class="roles" id="roles"></div>
+    <div class="row" style="margin-top:10px"><button class="btn soft grow" id="aed-btn" onclick="aedStep()">⚡ Attach AED pads</button></div>
+    <div class="feedback" id="cp-fb">Start compressions. Aim for the green zone on both gauges.</div>
+  </div>
+
+  <div class="sheet" id="ov-triage" style="display:none">
+    <div class="grip"></div>
+    <div class="row"><h4 class="grow" id="tr-name">Casualty 1</h4><span class="chip" id="tr-count">0 / 8 tagged</span></div>
+    <div class="cas" id="tr-cas"></div>
+    <div class="vgrid" id="tr-find" style="margin-top:8px"></div>
+    <div class="tags">
+      <button class="tagbtn tg-red" onclick="tag('red')">RED<small>Immediate</small></button>
+      <button class="tagbtn tg-yellow" onclick="tag('yellow')">YELLOW<small>Delayed</small></button>
+      <button class="tagbtn tg-green" onclick="tag('green')">GREEN<small>Minor</small></button>
+      <button class="tagbtn tg-black" onclick="tag('black')">BLACK<small>Expectant</small></button>
+    </div>
+    <div class="feedback" id="tr-fb">Check walking, breathing, circulation and mental status, then choose a tag.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ===== WardReady alpha prototype ===== */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function store(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem('wr_'+k));localStorage.setItem('wr_'+k,JSON.stringify(v));}catch(e){return null;}}
+const S=store('state')||{done:{},log:[],skills:{step:0,err:0},ward:{acts:[],vit:null,esc:null,wait:0},cpr:{n:0,good:0,rates:[],depths:[],aed:0,roles:{}},triage:{tags:{},cur:0},t0:{}};
+function save(){store('state',S);}
+function log(mod,txt,kind){const d=new Date();S.log.push({mod,txt,kind:kind||'ok',t:d.toTimeString().slice(0,5)});save();}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2600);}
+function sw(el){el.classList.toggle('on');}
+function resetAll(){try{localStorage.removeItem('wr_state')}catch(e){};location.hash='#home';location.reload();}
+function go(h){if($('#sim').classList.contains('on'))closeSim(true);location.hash=h;}
+
+/* ---------- vitals ---------- */
+const V0={hr:118,sbp:92,dbp:58,rr:24,spo2:91,temp:38.6,avpu:'Alert'};
+if(!S.ward.vit)S.ward.vit={...V0};
+function ews(v){let s=0;
+  s+=v.rr<=8?3:v.rr<=11?1:v.rr<=20?0:v.rr<=24?2:3;
+  s+=v.spo2<=91?3:v.spo2<=93?2:v.spo2<=95?1:0;
+  s+=v.sbp<=90?3:v.sbp<=100?2:v.sbp<=110?1:v.sbp<=219?0:3;
+  s+=v.hr<=40?3:v.hr<=50?1:v.hr<=90?0:v.hr<=110?1:v.hr<=130?2:3;
+  s+=v.temp<=35?3:v.temp<=36?1:v.temp<=38?0:v.temp<=39?1:2;
+  s+=v.avpu==='Alert'?0:3; return s;}
+function vcls(k,v){const r={hr:[[91,110,'mid'],[111,999,'hi']],sbp:[[0,100,'hi'],[101,110,'mid']],rr:[[21,99,'hi'],[0,8,'hi']],spo2:[[0,93,'hi'],[94,95,'mid']],temp:[[38.1,99,'mid']]}[k]||[];
+  for(const[a,b,c]of r)if(v>=a&&v<=b)return c;return 'ok';}
+function vitalsHTML(v){return [['hr','Heart rate',v.hr,'bpm'],['sbp','Blood pressure',v.sbp+'/'+v.dbp,''],['rr','Breathing',v.rr,'/min'],['spo2','SpO₂',v.spo2,'%'],['temp','Temp',v.temp.toFixed(1),'°C'],['avpu','Consciousness',v.avpu,'']]
+  .map(([k,l,val,u])=>`<div class="vital ${k==='avpu'?(v.avpu==='Alert'?'ok':'hi'):vcls(k,k==='sbp'?v.sbp:+val)}"><span>${l}</span><b>${val}<small> ${u}</small></b></div>`).join('');}
+function drawTrend(){const pts=[86,88,92,95,101,107,113,118];const W=300,H=70;
+  const p=pts.map((y,i)=>[i*(W/(pts.length-1)),H-6-(y-80)/45*(H-12)]);
+  $('#trend').innerHTML=`<rect x="0" y="${H-6-(110-80)/45*(H-12)}" width="300" height="${(110-80)/45*(H-12)}" fill="#fdeaea"/><polyline fill="none" stroke="#dc2626" stroke-width="2.5" points="${p.map(a=>a.join(',')).join(' ')}"/>`+p.map(a=>`<circle cx="${a[0]}" cy="${a[1]}" r="3" fill="#dc2626"/>`).join('');}
+
+/* monitor canvas */
+let ecgX=0;
+function drawMonitor(){const c=$('#monCanvas');if(!c)return;const g=c.getContext('2d'),v=S.ward.vit,arrest=S.mode==='code';
+  g.fillStyle='#05090b';g.fillRect(0,0,512,352);
+  g.strokeStyle=arrest?'#ef4444':'#22c55e';g.lineWidth=4;g.beginPath();
+  for(let x=0;x<330;x+=2){const ph=((x+ecgX)%90);let y=70;
+    if(arrest){y=70+Math.sin((x+ecgX)/7)*10+Math.sin((x+ecgX)/3)*6;}
+    else{if(ph>40&&ph<44)y=70-50;else if(ph>=44&&ph<48)y=70+18;else if(ph>60&&ph<72)y=70-10;}
+    x?g.lineTo(x+10,y):g.moveTo(x+10,y);}g.stroke();
+  g.font='bold 30px sans-serif';g.fillStyle=arrest?'#ef4444':'#22c55e';g.fillText('HR',360,40);
+  g.font='bold 74px sans-serif';g.fillText(arrest?'VF':v.hr,360,110);
+  g.fillStyle='#fde047';g.font='bold 26px sans-serif';g.fillText('BP',20,170);g.font='bold 56px sans-serif';g.fillText(arrest?'--/--':v.sbp+'/'+v.dbp,20,225);
+  g.fillStyle='#38bdf8';g.font='bold 26px sans-serif';g.fillText('SpO2',290,170);g.font='bold 56px sans-serif';g.fillText(arrest?'--':v.spo2+'%',290,225);
+  g.fillStyle='#f8fafc';g.font='bold 26px sans-serif';g.fillText('RR '+(arrest?'0':v.rr),20,300);g.fillText('T '+v.temp.toFixed(1)+'°C',200,300);
+  g.fillStyle=arrest?'#ef4444':'#fb923c';g.fillText(arrest?'ARREST':'EWS '+ews(v),390,300);
+  const m=$('#monitor');if(m&&m.getObject3D('mesh')){const mat=m.getObject3D('mesh').material;if(mat.map)mat.map.needsUpdate=true;}}
+setInterval(()=>{ecgX+=6;if($('#sim').classList.contains('on')&&(S.mode==='ward'||S.mode==='code'))drawMonitor();},120);
+
+function drawPoster(){const c=$('#posterCanvas'),g=c.getContext('2d');g.fillStyle='#ffffff';g.fillRect(0,0,512,640);
+  g.fillStyle='#0f766e';g.fillRect(0,0,512,90);g.fillStyle='#fff';g.font='bold 40px sans-serif';g.fillText('Hand hygiene',24,58);
+  const st=['Palm to palm','Back of hands','Between fingers','Backs of fingers','Thumbs','Fingertips','Wrists'];
+  g.font='bold 30px sans-serif';st.forEach((s,i)=>{g.fillStyle='#e1f3f1';g.fillRect(24,110+i*72,464,60);g.fillStyle='#0b5852';g.fillText((i+1)+'. '+s,40,150+i*72);});}
+
+/* ---------- 3D labels ---------- */
+function label(parent,text,pos,color){const c=document.createElement('canvas');c.width=512;c.height=128;const g=c.getContext('2d');
+  g.fillStyle=color||'rgba(13,31,45,0.85)';const r=40;g.beginPath();g.roundRect?g.roundRect(4,14,504,100,r):g.rect(4,14,504,100);g.fill();
+  g.fillStyle='#fff';g.font='bold 52px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,256,66);
+  const p=document.createElement('a-plane');p.setAttribute('width',0.48);p.setAttribute('height',0.12);p.setAttribute('position',pos);
+  p.setAttribute('material','shader:flat;transparent:true');p.addEventListener('loaded',()=>{const tex=new THREE.CanvasTexture(c);const mesh=p.getObject3D('mesh');mesh.material.map=tex;mesh.material.needsUpdate=true;});
+  p.setAttribute('look-at','#cam');parent.appendChild(p);return p;}
+AFRAME.registerComponent('look-at',{schema:{type:'selector'},tick(){if(this.data){const t=new THREE.Vector3();this.data.object3D.getWorldPosition(t);this.el.object3D.lookAt(t);}}});
+
+/* ---------- simulation layer ---------- */
+const CAM={ward:{p:'0 0 0.3',r:[-27,0]},code:{p:'0.15 0.3 -1.15',r:[-44,0]},skills:{p:'20.0 0.1 -0.2',r:[-30,0]},triage:{p:'-40 1.6 2.0',r:[-24,0]}};
+let simTimer=null;
+function setView(pitch,yaw){const cam=$('#cam');const lc=cam.components['look-controls'];if(lc){lc.pitchObject.rotation.x=THREE.MathUtils.degToRad(pitch);lc.yawObject.rotation.y=THREE.MathUtils.degToRad(yaw);}}
+function openSim(mode){S.mode=mode;save();location.hash='#sim/'+mode;}
+function startSim(mode){S.mode=mode;$('#sim').classList.add('on');$('#tabbar').style.display='none';
+  $('#g-ward').setAttribute('visible',mode==='ward'||mode==='code');$('#g-code').setAttribute('visible',mode==='code');
+  $('#hs-ward').setAttribute('visible',mode==='ward');$$('#hs-ward a-ring').forEach(h=>h.classList.toggle('hot',mode==='ward'));
+  $('#g-skills').setAttribute('visible',mode==='skills');$('#g-triage').setAttribute('visible',mode==='triage');
+  $('#pillow').setAttribute('visible',mode!=='code');
+  $('#patient').setAttribute('rotation',mode==='code'?'0 0 0':'0 0 0');
+  const sc=$('a-scene');sc.setAttribute('background','color',mode==='triage'?'#bfe0f2':'#dfe9ec');
+  $('#rig').setAttribute('position',CAM[mode].p);
+  const apply=()=>{setView(CAM[mode].r[0],CAM[mode].r[1]);try{sc.resize();}catch(e){}window.dispatchEvent(new Event('resize'));};setTimeout(apply,60);setTimeout(apply,400);if(sc.hasLoaded)apply();else sc.addEventListener('loaded',apply);
+  ['skills','ward','code','triage'].forEach(m=>$('#ov-'+m).style.display=m===mode?'block':'none');
+  const T={skills:['Skills Lab','IV cannulation · guided mode'],ward:['Virtual Ward · Bed 12','Drag to look around · tap the glowing rings'],code:['Code Blue · Bed 12','Compress on the red pad · assign your team'],triage:['Triage Drill','Tap a casualty, check, then tag']}[mode];
+  $('#sim-title').textContent=T[0];$('#sim-sub').textContent=T[1];
+  if(!S.t0[mode]){S.t0[mode]=Date.now();save();}
+  clearInterval(simTimer);const tick=()=>{const s=Math.floor((Date.now()-S.t0[mode])/1000);$('#sim-timer').textContent='⏱ '+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};tick();simTimer=setInterval(tick,1000);
+  $('#sim-timer').className='pill'+(mode==='code'||mode==='triage'?' red':'');
+  ({skills:renderSkills,ward:renderWard,code:renderCode,triage:renderTriage})[mode]();drawMonitor();}
+function closeSim(silent){$('#sim').classList.remove('on');$('#tabbar').style.display='flex';clearInterval(simTimer);$('#hud').innerHTML='';if(!silent)location.hash='#home';}
+document.addEventListener('click',e=>{});
+function bindHot(){$$('.hot').forEach(h=>h.addEventListener('click',()=>hot(h.dataset.hs)));}
+function hot(id){if(S.mode==='skills')skillTap(id);else if(S.mode==='ward')wardHot(id);}
+
+/* ---------- module 1: skills ---------- */
+const SK=[['sink','Perform hand hygiene (7 steps, 20–30 s)','Use the sink or hand rub before touching the patient.'],
+ ['band','Check patient ID band and explain the procedure','Confirm name and MRN against the order; get verbal consent.'],
+ ['gloves','Put on clean gloves','Gloves protect you from blood exposure.'],
+ ['tourniquet','Apply tourniquet and choose a vein','Place it 7–10 cm above the site; look for a straight, bouncy vein.'],
+ ['swab','Clean the site and let it dry','Clean for 30 s and let it air-dry; do not touch the site again.'],
+ ['cannula','Insert cannula, release tourniquet, secure','Insert bevel up at a low angle, watch for flashback, then secure the dressing.'],
+ ['sharps','Dispose of the needle in the sharps bin','Never recap. Dispose at the point of use.']];
+function renderSkills(){drawPoster();const st=S.skills.step;
+  $('#sk-list').innerHTML=SK.map((s,i)=>`<li class="${i<st?'on':i===st?'cur':''}" onclick="toast('Hint: ${s[2].replace(/'/g,'’')}')"><span class="ck">${i<st?'✓':''}</span><div>${s[1]}</div></li>`).join('');
+  $('#sk-count').textContent=st+' / 7';
+  $('#hud').innerHTML=`<div class="hv ${S.skills.err?'mid':'ok'}"><span>MISTAKES</span><b>${S.skills.err}</b></div><div class="hv"><span>MODE</span><b>Guided</b></div><div class="hv"><span>NEXT</span><b>${st<7?SK[st][0]:'done'}</b></div>`;}
+function skillTap(id){const st=S.skills.step;if(st>=7)return;
+  if(id===SK[st][0]){S.skills.step++;log('Skills Lab',SK[st][1],'ok');$('#sk-fb').className='feedback ok';$('#sk-fb').textContent='✓ Correct. '+(st+1<7?'Next: '+SK[st+1][1]+'.':'Procedure complete. The Virtual Ward is unlocked.');
+    if(S.skills.step===7){S.done.skills=1;toast('Skills Lab complete · score '+skillScore()+'%');}}
+  else{S.skills.err++;const want=SK[st][1];log('Skills Lab','Wrong order: tapped '+id+' before “'+want+'”','bad');$('#sk-fb').className='feedback bad';$('#sk-fb').textContent='✗ Not yet. First: '+want+'. '+SK[st][2];}
+  save();renderSkills();}
+function skillScore(){return Math.max(0,Math.round((S.skills.step/7)*100-S.skills.err*8));}
+
+/* ---------- module 2: ward ---------- */
+const WA=[['airway','🫁','Check airway & breathing','ok','Airway clear. Breathing fast and shallow, 24/min.'],
+ ['oxygen','💨','Give oxygen by mask','ok','SpO₂ rises to 95%.'],
+ ['cultures','🧪','Take blood cultures','ok','Two sets taken before antibiotics.'],
+ ['fluids','💧','Start IV fluids (as charted)','ok','BP improves to 104/66, HR 106.'],
+ ['urine','🚻','Measure urine output','ok','Catheter bag shows 15 ml in the last hour.'],
+ ['wait','⏳','Recheck in 4 hours','bad','Unsafe: a high warning score needs action now. He is more drowsy.']];
+function renderWard(){const v=S.ward.vit,e=ews(v);
+  $('#hud').innerHTML=[['HR',v.hr,vcls('hr',v.hr)],['BP',v.sbp+'/'+v.dbp,vcls('sbp',v.sbp)],['SpO₂',v.spo2+'%',vcls('spo2',v.spo2)],['RR',v.rr,vcls('rr',v.rr)],['EWS',e,e>=7?'hi':e>=5?'mid':'ok']].map(a=>`<div class="hv ${a[2]}"><span>${a[0]}</span><b>${a[1]}</b></div>`).join('');
+  $('#wd-ews').textContent='Warning score '+e;$('#wd-ews').className='chip '+(e>=7?'red':e>=5?'amber':'green');
+  $('#wd-acts').innerHTML=WA.map(a=>{const d=S.ward.acts.includes(a[0]);return `<button class="act ${d?(a[3]==='ok'?'done':'wrong'):''}" onclick="wardAct('${a[0]}')"><i>${a[1]}</i>${a[2]}</button>`;}).join('');}
+function wardAct(id){if(S.ward.acts.includes(id)&&id!=='wait')return;const a=WA.find(x=>x[0]===id);const v=S.ward.vit;
+  if(!S.ward.acts.includes(id))S.ward.acts.push(id);
+  if(id==='oxygen'){v.spo2=95;v.rr=22;}if(id==='fluids'){v.sbp=104;v.dbp=66;v.hr=106;}
+  if(id==='wait'){S.ward.wait++;v.avpu='Voice';v.sbp=86;v.dbp=52;v.hr=126;}
+  $('#wd-fb').className='feedback '+(a[3]==='ok'?'ok':'bad');$('#wd-fb').textContent=(a[3]==='ok'?'✓ ':'✗ ')+a[4];
+  log('Virtual Ward',a[2]+(a[3]==='ok'?'':' (unsafe delay)'),a[3]==='ok'?'ok':'bad');save();renderWard();drawMonitor();}
+function wardHot(id){const v=S.ward.vit;const m={patient:'Encik Rahman is hot and clammy. Skin mottled on the knees. Responds to your voice.',monitor:`Monitor: HR ${v.hr}, BP ${v.sbp}/${v.dbp}, SpO₂ ${v.spo2}%. Warning score ${ews(v)}.`,iv:'IV site: clean, no swelling. Fluid bag: 1 L Hartmann’s ready as charted.',oxygen:'Wall oxygen outlet. Choose “Give oxygen by mask” to connect it.'}[id];
+  $('#wd-fb').className='feedback';$('#wd-fb').textContent='🔍 '+m;}
+function sendSbar(){const a=$('#sb-a');if(!a.value.trim()){const v=S.ward.vit;a.value=`HR ${v.hr}, BP ${v.sbp}/${v.dbp}, RR ${v.rr}, SpO₂ ${v.spo2}%, temp ${v.temp}°C. Warning score ${ews(v)} (high).`;$('#sbar-hint').className='feedback bad';$('#sbar-hint').textContent='Assessment was empty, so it was auto-filled from the monitor. In the assessment mode this costs points.';S.ward.sbarAuto=1;}
+  S.ward.esc=Math.round((Date.now()-(S.t0.ward||Date.now()))/1000);S.done.ward=1;log('Virtual Ward','SBAR call to Dr. Lim after '+fmt(S.ward.esc),S.ward.esc<=300?'ok':'mid');save();
+  toast('Dr. Lim: “Coming in 10 minutes. Start the antibiotic as charted.”');setTimeout(()=>{toast('🚨 Bed 12 has become unresponsive · Code Blue');go('#code');},2200);}
+function fmt(s){return Math.floor(s/60)+' min '+(s%60)+' s';}
+function wardScore(){const good=S.ward.acts.filter(a=>a!=='wait').length;let sc=good/5*80+(S.ward.esc!=null?20:0)-S.ward.wait*20-(S.ward.sbarAuto?10:0);return Math.max(0,Math.min(100,Math.round(sc)));}
+
+/* ---------- module 3: code blue ---------- */
+const ROLES=[['Compressions','You'],['Airway & breaths','Nurse Mei'],['AED','Nurse Kumar'],['Recorder','Dr. Lim']];
+let taps=[],downAt=0;
+function renderCode(){const c=S.cpr;
+  $('#roles').innerHTML=ROLES.map((r,i)=>`<span class="role ${c.roles[i]?'on':''}" onclick="assignRole(${i})">${r[0]}: ${c.roles[i]?r[1]:'—'}</span>`).join('');
+  const cyc=Math.floor(c.n/30)+1,inC=c.n%30;$('#cp-cycle').textContent='Cycle '+cyc+' · '+inC+'/30';
+  const pct=c.n?Math.round(c.good/c.n*100):0;
+  $('#hud').innerHTML=`<div class="hv"><span>COMPRESSIONS</span><b>${c.n}</b></div><div class="hv ${pct>=70?'ok':pct?'mid':''}"><span>IN TARGET</span><b>${pct}%</b></div><div class="hv ${c.aed>=3?'ok':'hi'}"><span>AED</span><b>${['Not on','Pads on','Analysing','Shocked'][c.aed]}</b></div>`;}
+function assignRole(i){S.cpr.roles[i]=1;log('Code Blue','Assigned '+ROLES[i][0]+' to '+ROLES[i][1],'ok');save();renderCode();}
+function needle(id,val,min,max){const p=Math.max(0,Math.min(100,(val-min)/(max-min)*100));$(id+' .needle').style.left='calc('+p+'% - 2px)';}
+function compress(dur){const now=Date.now();taps.push(now);taps=taps.filter(t=>now-t<6000);const c=S.cpr;c.n++;
+  let rate=null;if(taps.length>=3){rate=Math.round(60000/((taps[taps.length-1]-taps[0])/(taps.length-1)));}
+  const depth=Math.max(3,Math.min(7.5,3+dur/50));
+  if(rate){c.rates.push(rate);$('#cp-rate').textContent=rate+' /min';needle('#g-rate',rate,70,150);}
+  c.depths.push(depth);$('#cp-depth').textContent=depth.toFixed(1)+' cm';needle('#g-depth',depth,3.5,7.5);
+  const okR=rate&&rate>=100&&rate<=120,okD=depth>=5&&depth<=6;if(okR&&okD)c.good++;
+  const fb=$('#cp-fb');if(!rate){fb.className='feedback';fb.textContent='Keep going…';}
+  else if(!okR){fb.className='feedback bad';fb.textContent=rate>120?'Too fast: slow down slightly, let the chest recoil fully.':'Too slow: push faster, about 2 per second.';}
+  else if(!okD){fb.className='feedback bad';fb.textContent=depth<5?'Too shallow: push harder (hold a little longer).':'Too deep: ease off slightly.';}
+  else{fb.className='feedback ok';fb.textContent='✓ Good compressions. Rate and depth in target.';}
+  if(c.n%30===0){fb.className='feedback';fb.textContent='30 done: pause for 2 breaths (Nurse Mei). Keep the pause under 10 s.';log('Code Blue','Completed cycle '+(c.n/30)+' of 30 compressions','ok');}
+  const h=$('#cpr-hands');if(h){h.setAttribute('position','0 0.80 -2.5');setTimeout(()=>h.setAttribute('position','0 0.84 -2.5'),120);}
+  save();renderCode();}
+function aedStep(){const c=S.cpr;if(c.aed>=3)return;c.aed++;const t=['Pads attached: right upper chest and left side.','AED analysing: “Shock advised. Stand clear!”','Shock delivered. Resume compressions immediately.'][c.aed-1];
+  $('#aed-btn').textContent=['⚡ Attach AED pads','🔍 Analyse rhythm','⚡ Shock: stand clear','✓ Shock delivered'][c.aed];
+  $('#cp-fb').className='feedback';$('#cp-fb').textContent=t;log('Code Blue',t,'ok');if(c.aed>=3){S.done.code=1;}save();renderCode();}
+function cprScore(){const c=S.cpr;if(!c.n)return 0;const r=c.good/c.n*70;const roles=Object.keys(c.roles).length/4*15;const aed=c.aed/3*15;return Math.round(r+roles+aed);}
+function bindCpr(){const p=$('#cprpad');const down=e=>{e.preventDefault();downAt=Date.now();p.style.transform='scale(.97)';};const up=e=>{e.preventDefault();p.style.transform='';if(downAt)compress(Date.now()-downAt);downAt=0;};
+  p.addEventListener('pointerdown',down);p.addEventListener('pointerup',up);p.addEventListener('pointerleave',()=>{p.style.transform='';});
+  document.addEventListener('keydown',e=>{if(e.code==='Space'&&S.mode==='code'&&$('#sim').classList.contains('on')){if(!downAt)downAt=Date.now();e.preventDefault();}});
+  document.addEventListener('keyup',e=>{if(e.code==='Space'&&S.mode==='code'&&downAt){compress(Date.now()-downAt);downAt=0;}});}
+
+/* ---------- module 4: triage ---------- */
+const CAS=[{n:'Man, 30s',walk:'Yes',rr:'18',cr:'1 s',cmd:'Yes',inj:'Cut on forearm',ans:'green',pos:[-1.2,-2.6],stand:1},
+ {n:'Woman, 40s',walk:'No',rr:'34',cr:'2 s',cmd:'Yes',inj:'Chest bruising',ans:'red',pos:[1.0,-3.4]},
+ {n:'Man, 50s',walk:'No',rr:'18',cr:'1.5 s',cmd:'Yes',inj:'Open leg fracture',ans:'yellow',pos:[-0.4,-4.6]},
+ {n:'Man, 60s',walk:'No',rr:'0 after airway',cr:'—',cmd:'—',inj:'Severe head injury',ans:'black',pos:[2.0,-5.6]},
+ {n:'Woman, 20s',walk:'No',rr:'22',cr:'3 s',cmd:'Yes',inj:'Pale, abdominal pain',ans:'red',pos:[-1.9,-5.2]},
+ {n:'Teen, 16',walk:'Yes',rr:'20',cr:'1 s',cmd:'Yes',inj:'Wrist pain, anxious',ans:'green',pos:[0.2,-2.2],stand:1},
+ {n:'Man, 70s',walk:'No',rr:'20',cr:'1.8 s',cmd:'No',inj:'Confused, head wound',ans:'red',pos:[1.6,-7.0]},
+ {n:'Woman, 30s',walk:'No',rr:'16',cr:'1.5 s',cmd:'Yes',inj:'Back pain',ans:'yellow',pos:[-0.9,-7.6]}];
+const TCOL={red:'#dc2626',yellow:'#eab308',green:'#16a34a',black:'#111827'};
+function buildCasualties(){const root=$('#casualties');if(root.childElementCount)return;
+  CAS.forEach((c,i)=>{const e=document.createElement('a-entity');e.setAttribute('position',c.pos[0]+' 0 '+c.pos[1]);
+    const shirt=['#2563eb','#db2777','#4b5563','#065f46','#f59e0b','#7c3aed','#92400e','#0ea5e9'][i];
+    if(c.stand){e.innerHTML=`<a-cylinder position="0 0.55 0" radius="0.17" height="0.8" color="#334155"></a-cylinder><a-cylinder position="0 1.15 0" radius="0.2" height="0.6" color="${shirt}"></a-cylinder><a-sphere position="0 1.6 0" radius="0.14" color="#c58c5c"></a-sphere>`;}
+    else{e.innerHTML=`<a-box position="0 0.12 0" width="0.45" height="0.2" depth="1.5" color="${shirt}" rotation="0 ${i*23%60-30} 0"></a-box><a-sphere position="0 0.15 -0.85" radius="0.13" color="#c58c5c"></a-sphere>`;}
+    const tg=document.createElement('a-sphere');tg.setAttribute('radius',0.11);tg.setAttribute('position','0 '+(c.stand?2.0:0.75)+' 0');tg.setAttribute('color','#ffffff');tg.setAttribute('id','tag'+i);tg.classList.add('hot');tg.dataset.hs='cas'+i;
+    tg.setAttribute('animation','property: position; to: 0 '+(c.stand?2.12:0.87)+' 0; dir: alternate; loop: true; dur: 900');
+    tg.addEventListener('click',()=>{S.triage.cur=i;save();renderTriage();});e.appendChild(tg);
+    label(e,(i+1)+'',(c.stand?'0 2.32 0':'0 1.07 0'),'rgba(13,31,45,0.85)').setAttribute('width',0.2);
+    root.appendChild(e);});}
+function renderTriage(){buildCasualties();const t=S.triage,c=CAS[t.cur];
+  $('#tr-name').textContent='Casualty '+(t.cur+1)+' · '+c.n;const n=Object.keys(t.tags).length;$('#tr-count').textContent=n+' / 8 tagged';
+  $('#tr-cas').innerHTML=CAS.map((x,i)=>`<button class="${t.tags[i]||''} ${i===t.cur?'cur':''}" onclick="S.triage.cur=${i};save();renderTriage()">${i+1}</button>`).join('');
+  $('#tr-find').innerHTML=[['Walks?',c.walk],['Breathing',c.rr+(/^\d+$/.test(c.rr)?'/min':'')],['Cap. refill',c.cr],['Commands',c.cmd],['Injury',c.inj]].map(a=>`<div class="vital"><span>${a[0]}</span><b style="font-size:13px">${a[1]}</b></div>`).join('');
+  CAS.forEach((x,i)=>{const s=$('#tag'+i);if(s)s.setAttribute('color',t.tags[i]?TCOL[t.tags[i]]:'#ffffff');});
+  const acc=triageAcc();$('#hud').innerHTML=`<div class="hv"><span>TAGGED</span><b>${n}/8</b></div><div class="hv ${n?(acc>=75?'ok':'mid'):''}"><span>ACCURACY</span><b>${n?acc+'%':'—'}</b></div><div class="hv"><span>TARGET</span><b>4:00</b></div>`;}
+function tag(col){const t=S.triage,i=t.cur,c=CAS[i];t.tags[i]=col;const ok=col===c.ans;
+  const order={green:0,yellow:1,red:2,black:3};const fb=$('#tr-fb');
+  if(ok){fb.className='feedback ok';fb.textContent='✓ Correct: '+col.toUpperCase()+'.';}
+  else{fb.className='feedback bad';fb.textContent='✗ This should be '+c.ans.toUpperCase()+' ('+(order[col]<order[c.ans]?'under-triage, the most dangerous error':'over-triage, uses scarce resources')+').';}
+  log('Triage Drill','Casualty '+(i+1)+' tagged '+col.toUpperCase()+(ok?'':' (should be '+c.ans.toUpperCase()+')'),ok?'ok':'bad');
+  const next=CAS.findIndex((x,j)=>!t.tags[j]);if(next>=0)t.cur=next;else{S.done.triage=1;toast('All 8 tagged · accuracy '+triageAcc()+'% · see your debrief');}
+  save();renderTriage();}
+function triageAcc(){const k=Object.keys(S.triage.tags);if(!k.length)return 0;return Math.round(k.filter(i=>S.triage.tags[i]===CAS[i].ans).length/k.length*100);}
+
+/* ---------- debrief / logbook ---------- */
+function renderDebrief(){const mods=[['Skills Lab',S.skills.step?skillScore():null,'🧤'],['Virtual Ward',S.ward.acts.length||S.ward.esc!=null?wardScore():null,'🛏️'],['Code Blue',S.cpr.n||S.cpr.aed?cprScore():null,'❤️'],['Triage Drill',Object.keys(S.triage.tags).length?triageAcc():null,'🚑']];
+  const done=mods.filter(m=>m[1]!=null);const avg=done.length?Math.round(done.reduce((a,m)=>a+m[1],0)/done.length):0;
+  $('#ring-arc').setAttribute('stroke-dashoffset',264-264*avg/100);$('#ring-txt').textContent=avg+'%';
+  $('#ring-note').textContent=done.length===4?'All four modules done. Ready for instructor sign-off.':done.length+' of 4 modules done. Finish the rest to unlock sign-off.';
+  $('#ring-chips').innerHTML=`<span class="chip ${avg>=75?'green':'amber'}">${avg>=75?'Competent':'Needs practice'}</span><span class="chip blue">${S.log.length} actions logged</span>`;
+  $('#mod-scores').innerHTML=mods.map(m=>`<div class="skillrow"><span>${m[2]} ${m[0]}</span><div class="bar"><i style="width:${m[1]||0}%;background:${m[1]==null?'#cbd5e1':m[1]>=75?'#15803d':m[1]>=50?'#f59e0b':'#dc2626'}"></i></div><b>${m[1]==null?'—':m[1]+'%'}</b></div>`).join('');
+  const L=S.log.slice(-9);$('#timeline').innerHTML=L.length?L.map(l=>`<li class="${l.kind==='bad'?'bad':l.kind==='mid'?'mid':''}"><i></i>${l.txt}<small>${l.t} · ${l.mod}</small></li>`).join(''):'<li class="mid"><i></i>No actions yet. Start the shift path on the home screen.<small>—</small></li>';
+  const fb=[];if(S.skills.err)fb.push('<b>Skills:</b> '+S.skills.err+' step(s) done out of order. Repeat in guided mode once, then try assessment mode.');
+  if(S.ward.wait)fb.push('<b>Ward:</b> you chose to wait with a high warning score. Escalate first, then continue care.');
+  if(S.ward.esc!=null)fb.push('<b>Escalation:</b> SBAR call made after '+fmt(S.ward.esc)+(S.ward.esc<=300?', within the 5-minute target.':'. Aim for under 5 minutes.'));
+  const rs=S.cpr.rates;if(rs.length){const fast=rs.filter(r=>r>120).length/rs.length;fb.push('<b>CPR:</b> '+(fast>.3?'many compressions were faster than 120/min; count “one-and-two-and”.':'rate was mostly in the target range. Keep full chest recoil.'));}
+  const bad=Object.keys(S.triage.tags).filter(i=>S.triage.tags[i]!==CAS[i].ans);if(Object.keys(S.triage.tags).length)fb.push('<b>Triage:</b> '+(bad.length?bad.length+' casualty(ies) mis-tagged, including #'+bad.map(i=>+i+1).join(', #')+'. Re-check mental status before choosing YELLOW.':'all casualties tagged correctly.'));
+  $('#fb-text').innerHTML=fb.length?fb.map(f=>'<p style="margin:4px 0">'+f+'</p>').join(''):'<span class="muted">Feedback appears here after you finish a module.</span>';}
+function renderLogbook(){const items=[['Hand hygiene','Signed · Sr. Noraini','ok'],['IV cannulation (simulated)',S.done.skills?'Ready for sign-off':'In progress',S.done.skills?'mid':'no'],['Recognising the deteriorating patient',S.done.ward?'Ready for sign-off':'Not attempted',S.done.ward?'mid':'no'],['Basic life support (adult)',S.done.code?'Ready for sign-off':'Not attempted',S.done.code?'mid':'no'],['Mass casualty triage',S.done.triage?'Ready for sign-off':'Not attempted',S.done.triage?'mid':'no']];
+  $('#signs').innerHTML=items.map(i=>`<div class="sign"><div class="st" style="background:${i[2]==='ok'?'var(--ok-lt)':i[2]==='mid'?'var(--amber-lt)':'#eef2f3'}">${i[2]==='ok'?'✅':i[2]==='mid'?'🖊️':'○'}</div><div class="grow"><b style="font-size:13px">${i[0]}</b><div class="small muted">${i[1]}</div></div></div>`).join('');
+  const st=[['Aina S. (you)',[skillScore()||88,wardScore()||72,cprScore()||64,triageAcc()||75,0]],['Daniel T.',[92,85,78,88,0]],['Priya K.',[80,55,70,62,0]],['Hafiz R.',[95,90,88,100,0]],['Mei Ling C.',[70,48,52,75,0]],['Arun S.',[85,76,60,50,0]]];
+  const col=v=>v>=80?'#bbf7d0':v>=60?'#fde68a':'#fecaca';
+  $('#heat').innerHTML='<div></div>'+['Skills','Ward','CPR','Triage','Avg'].map(h=>`<div class="h">${h}</div>`).join('')+st.map(s=>{const a=Math.round(s[1].slice(0,4).reduce((x,y)=>x+y,0)/4);s[1][4]=a;return `<div class="n">${s[0]}</div>`+s[1].map(v=>`<div class="c" style="background:${col(v)}">${v}</div>`).join('');}).join('');}
+function lbTab(i){$$('#lb-seg button').forEach((b,j)=>b.classList.toggle('on',i===j));$('#lb-me').style.display=i?'none':'block';$('#lb-ins').style.display=i?'block':'none';}
+function drawQR(){const c=$('#qr'),g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,120,120);let s=7316;const rnd=()=>{s=(s*9301+49297)%233280;return s/233280;};
+  const N=21,cell=104/N;g.fillStyle='#0d1f2d';for(let y=0;y<N;y++)for(let x=0;x<N;x++){const f=(x<7&&y<7)||(x>13&&y<7)||(x<7&&y>13);if(f)continue;if(rnd()>.55)g.fillRect(8+x*cell,8+y*cell,cell,cell);}
+  [[0,0],[14,0],[0,14]].forEach(([x,y])=>{g.fillRect(8+x*cell,8+y*cell,7*cell,7*cell);g.fillStyle='#fff';g.fillRect(8+(x+1)*cell,8+(y+1)*cell,5*cell,5*cell);g.fillStyle='#0d1f2d';g.fillRect(8+(x+2)*cell,8+(y+2)*cell,3*cell,3*cell);});}
+
+/* ---------- home & router ---------- */
+function renderHome(){$$('#path .step').forEach(s=>{const m=s.dataset.m;s.classList.toggle('done',!!S.done[m]);if(S.done[m])s.querySelector('.num').textContent='✓';});
+  const n=Object.keys(S.done).length;$('#st-comp').textContent=(9+n)+'/15';}
+function route(){const h=location.hash||'#home';
+  if(h.startsWith('#sim/')){const m=h.split('/')[1];startSim(m);return;}
+  if($('#sim').classList.contains('on'))closeSim(true);
+  const id=h.slice(1);const v=$('#v-'+id)?id:'home';
+  $$('.view').forEach(x=>x.classList.toggle('active',x.id==='v-'+v));
+  $$('.tab').forEach(t=>t.classList.toggle('on',t.dataset.t===v||(v==='ward'||v==='code'||v==='triage'||v==='sbar')&&t.dataset.t==='home'));
+  $('#main').scrollTop=0;
+  if(v==='home')renderHome();if(v==='ward'){$('#handover-vitals').innerHTML=vitalsHTML(V0);drawTrend();$('#ews').textContent=ews(V0);}
+  if(v==='sbar'){const s=Math.round((Date.now()-(S.t0.ward||Date.now()))/1000);$('#sbar-time').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+  if(v==='debrief')renderDebrief();if(v==='logbook')renderLogbook();if(v==='me')drawQR();}
+window.addEventListener('hashchange',route);
+document.addEventListener('DOMContentLoaded',()=>{bindCpr();const sc=$('a-scene');const b=()=>{bindHot();};if(sc.hasLoaded)b();else sc.addEventListener('loaded',b);route();});
+
+</script>
+</body>
+</html>
